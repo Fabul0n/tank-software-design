@@ -10,7 +10,7 @@ group 'ru.mipt.bit'
 version '1.0-SNAPSHOT'
 
 application {
-    mainClassName = 'ru.mipt.bit.platformer.GameDesktopLauncher'
+    mainClass = 'ru.mipt.bit.platformer.GameDesktopLauncher'
     if (Os.isFamily(Os.FAMILY_MAC)) {
         applicationDefaultJvmArgs = ['-XstartOnFirstThread']
     }

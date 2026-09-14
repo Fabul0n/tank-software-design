@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map version="1.2" tiledversion="2020.04.10" orientation="orthogonal" renderorder="right-down" width="10" height="8" tilewidth="128" tileheight="128" infinite="0" nextlayerid="4" nextobjectid="1">
+ <tileset firstgid="1" name="Tanks Redux" tilewidth="128" tileheight="128" tilecount="2" columns="0">
+  <grid orientation="orthogonal" width="1" height="1"/>
+  <tile id="0">
+   <image width="128" height="128" source="images/tileGrass1.png"/>
+  </tile>
+  <tile id="1">
+   <image width="128" height="128" source="images/tileGrass2.png"/>
+  </tile>
+ </tileset>
+ <layer id="1" name="Ground" width="10" height="8">
+  <data encoding="csv">
+2,2,1,1,1,1,2,2,1,2,
+2,1,2,2,1,1,2,1,1,1,
+2,2,1,2,2,2,1,1,1,2,
+1,2,2,1,2,2,2,1,1,1,
+2,2,2,2,1,1,1,1,1,1,
+2,1,1,1,1,1,1,2,1,1,
+1,2,2,2,2,2,1,2,1,1,
+1,2,1,2,1,1,2,1,2,2
+</data>
+ </layer>
+</map>

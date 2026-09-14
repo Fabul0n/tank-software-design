@@ -57,9 +57,11 @@ public class GameDesktopLauncher implements ApplicationListener {
         TiledMapTileLayer groundLayer = getSingleLayer(level);
         tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
 
-        // Texture decodes an image file and loads it into GPU memory, it represents a native resource
+        // Texture decodes an image file and loads it into GPU memory, it represents a
+        // native resource
         blueTankTexture = new Texture("images/tank_blue.png");
-        // TextureRegion represents Texture portion, there may be many TextureRegion instances of the same Texture
+        // TextureRegion represents Texture portion, there may be many TextureRegion
+        // instances of the same Texture
         playerGraphics = new TextureRegion(blueTankTexture);
         playerRectangle = createBoundingRectangle(playerGraphics);
         // set player initial position
@@ -122,7 +124,8 @@ public class GameDesktopLauncher implements ApplicationListener {
         }
 
         // calculate interpolated player screen coordinates
-        tileMovement.moveRectangleBetweenTileCenters(playerRectangle, playerCoordinates, playerDestinationCoordinates, playerMovementProgress);
+        tileMovement.moveRectangleBetweenTileCenters(playerRectangle, playerCoordinates, playerDestinationCoordinates,
+                playerMovementProgress);
 
         playerMovementProgress = continueProgress(playerMovementProgress, deltaTime, MOVEMENT_SPEED);
         if (isEqual(playerMovementProgress, 1f)) {
@@ -163,7 +166,8 @@ public class GameDesktopLauncher implements ApplicationListener {
 
     @Override
     public void dispose() {
-        // dispose of all the native resources (classes which implement com.badlogic.gdx.utils.Disposable)
+        // dispose of all the native resources (classes which implement
+        // com.badlogic.gdx.utils.Disposable)
         greenTreeTexture.dispose();
         blueTankTexture.dispose();
         level.dispose();

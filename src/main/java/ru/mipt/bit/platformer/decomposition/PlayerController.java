@@ -1,25 +1,24 @@
 package ru.mipt.bit.platformer.decomposition;
 
-import com.badlogic.gdx.Gdx;
-
-import static com.badlogic.gdx.Input.Keys.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class PlayerController {
-    private final MovementComponent movement;
+    private final KeyState keyState;
+    private final List<ButtonHandler> buttonHandlers = new ArrayList<>();
 
-    public PlayerController(MovementComponent movement) {
-        this.movement = movement;
+    public PlayerController(KeyState keyState) {
+        this.keyState = Objects.requireNonNull(keyState);
+    }
+
+    public void addButtonHandler(ButtonHandler buttonHandler) {
+        buttonHandlers.add(Objects.requireNonNull(buttonHandler));
     }
 
     public void update() {
-        if (Gdx.input.isKeyPressed(UP) || Gdx.input.isKeyPressed(W)) {
-            movement.requestMove(0, 1, 90f);
-        } else if (Gdx.input.isKeyPressed(DOWN) || Gdx.input.isKeyPressed(S)) {
-            movement.requestMove(0, -1, -90f);
-        } else if (Gdx.input.isKeyPressed(LEFT) || Gdx.input.isKeyPressed(A)) {
-            movement.requestMove(-1, 0, -180f);
-        } else if (Gdx.input.isKeyPressed(RIGHT) || Gdx.input.isKeyPressed(D)) {
-            movement.requestMove(1, 0, 0f);
+        for (ButtonHandler buttonHandler : buttonHandlers) {
+            buttonHandler.handle(keyState);
         }
     }
 }

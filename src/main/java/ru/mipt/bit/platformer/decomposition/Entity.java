@@ -1,76 +1,49 @@
 package ru.mipt.bit.platformer.decomposition;
 
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import java.util.Objects;
+
 import com.badlogic.gdx.math.GridPoint2;
-import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.Disposable;
 
-import static ru.mipt.bit.platformer.util.GdxGameUtils.*;
-
-public abstract class Entity implements Disposable {
-    private final TextureRegion textureRegion;
+public abstract class Entity {
     private final GridPoint2 coordinates;
-    private final Rectangle boundingRectangle;
-    private float rotation;
+    private Direction direction = Direction.RIGHT;
 
-    private final Array<Component> components = new Array<>();
-
-    public Entity(TiledMapTileLayer layer, Texture texture, GridPoint2 coordinates) {
-        this.textureRegion = new TextureRegion(texture);
-        this.coordinates = new GridPoint2(coordinates);
-        this.boundingRectangle = createBoundingRectangle(textureRegion);
-        moveRectangleAtTileCenter(layer, boundingRectangle, this.coordinates);
-        this.rotation = 0f;
-    }
-
-    protected <T extends Component> T addComponent(T component) {
-        components.add(component);
-        return component;
+    protected Entity(GridPoint2 coordinates) {
+        this.coordinates = new GridPoint2(Objects.requireNonNull(coordinates));
     }
 
     public void update(float deltaTime) {
-        for (Component component : components) {
-            component.update(deltaTime);
-        }
     }
 
-    public <T extends Component> T getComponent(Class<T> type) {
-        for (Component component : components) {
-            if (type.isInstance(component)) {
-                return type.cast(component);
-            }
-        }
-        return null;
+    public boolean occupies(GridPoint2 coordinates) {
+        return this.coordinates.equals(coordinates);
     }
 
-    public TextureRegion getTextureRegion() {
-        return textureRegion;
+    public boolean blocksMovementAt(GridPoint2 coordinates) {
+        return false;
     }
 
-    public GridPoint2 getCoordinates() {
+    public EntityMovement movementSnapshot() {
+        return EntityMovement.idle(coordinates, direction);
+    }
+
+    protected GridPoint2 tile() {
         return coordinates;
     }
 
-    public Rectangle getBoundingRectangle() {
-        return boundingRectangle;
+    protected GridPoint2 tileCopy() {
+        return new GridPoint2(coordinates);
     }
 
-    public float getRotation() {
-        return rotation;
+    protected Direction direction() {
+        return direction;
     }
 
-    public void setRotation(float rotation) {
-        this.rotation = rotation;
+    protected void face(Direction direction) {
+        this.direction = Objects.requireNonNull(direction);
     }
 
-    @Override
-    public void dispose() {
-        for (Component component : components) {
-            component.dispose();
-        }
-        textureRegion.getTexture().dispose();
+    protected void placeAt(GridPoint2 coordinates) {
+        this.coordinates.set(Objects.requireNonNull(coordinates));
     }
 }

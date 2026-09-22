@@ -1,22 +1,25 @@
 package ru.mipt.bit.platformer.decomposition;
 
-import static ru.mipt.bit.platformer.util.GdxGameUtils.drawTextureRegionUnscaled;
+import java.util.Objects;
 
-import com.badlogic.gdx.graphics.g2d.Batch;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.utils.Array;
 
 public class GameWorld {
     private final Array<Entity> entities = new Array<>();
-    private final TiledMapTileLayer groundLayer;
+    private final int width;
+    private final int height;
 
-    public GameWorld(TiledMapTileLayer groundLayer) {
-        this.groundLayer = groundLayer;
+    public GameWorld(int width, int height) {
+        if (width <= 0 || height <= 0) {
+            throw new IllegalArgumentException("World size must be positive");
+        }
+        this.width = width;
+        this.height = height;
     }
 
     public void spawn(Entity entity) {
-        entities.add(entity);
+        entities.add(Objects.requireNonNull(entity));
     }
 
     public void update(float deltaTime) {
@@ -25,33 +28,24 @@ public class GameWorld {
         }
     }
 
-    public void render(Batch batch) {
-        for (Entity entity : entities) {
-            drawTextureRegionUnscaled(
-                    batch,
-                    entity.getTextureRegion(),
-                    entity.getBoundingRectangle(),
-                    entity.getRotation());
-        }
-    }
-
-    public void dispose() {
-        for (Entity entity : entities) {
-            entity.dispose();
-        }
-        entities.clear();
-    }
-
     public boolean isTileFree(GridPoint2 coordinates) {
-        if (coordinates.x < 0 || coordinates.y < 0 || coordinates.x >= groundLayer.getWidth()
-                || coordinates.y >= groundLayer.getHeight()) {
+        if (!contains(coordinates)) {
             return false;
         }
+
         for (Entity entity : entities) {
-            if (entity instanceof Tree && entity.getCoordinates().equals(coordinates)) {
+            if (entity.blocksMovementAt(coordinates)) {
                 return false;
             }
         }
         return true;
+    }
+
+    public void clear() {
+        entities.clear();
+    }
+
+    private boolean contains(GridPoint2 coordinates) {
+        return coordinates.x >= 0 && coordinates.y >= 0 && coordinates.x < width && coordinates.y < height;
     }
 }

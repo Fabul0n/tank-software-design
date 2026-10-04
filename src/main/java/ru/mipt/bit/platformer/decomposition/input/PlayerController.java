@@ -1,4 +1,4 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.input;
 
 import java.util.ArrayList;
 import java.util.List;

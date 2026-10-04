@@ -1,4 +1,4 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -52,7 +52,7 @@ class GameWorldTest {
     @Test
     void updatesSpawnedEntities() {
         GameWorld world = new GameWorld(3, 3);
-        Tank tank = new Tank(new GridPoint2(0, 0), world::isTileFree);
+        Tank tank = new Tank(new GridPoint2(0, 0), world::isTileFree, 0.4f);
         world.spawn(tank);
 
         tank.move(Direction.RIGHT);

@@ -1,4 +1,4 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.model;
 
 import java.util.Objects;
 

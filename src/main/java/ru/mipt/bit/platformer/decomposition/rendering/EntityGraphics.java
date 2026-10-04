@@ -1,4 +1,7 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.rendering;
+
+import ru.mipt.bit.platformer.decomposition.model.EntityMovement;
+import ru.mipt.bit.platformer.decomposition.model.MovementState;
 
 import static ru.mipt.bit.platformer.util.GdxGameUtils.createBoundingRectangle;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.drawTextureRegionUnscaled;
@@ -9,39 +12,36 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.Disposable;
 
-import ru.mipt.bit.platformer.util.TileMovement;
-
-public class EntityGraphics implements Disposable {
-    private final Entity entity;
+public class EntityGraphics implements Graphics {
+    private final MovementState entity;
     private final TextureRegion textureRegion;
     private final Rectangle bounds;
-    private final TileMovement tileMovement;
+    private final MovementProjection movementProjection;
+    private float rotation;
 
-    public EntityGraphics(Entity entity, Texture texture, TileMovement tileMovement) {
+    public EntityGraphics(MovementState entity, Texture texture, MovementProjection movementProjection) {
         this.entity = Objects.requireNonNull(entity);
         this.textureRegion = new TextureRegion(Objects.requireNonNull(texture));
         this.bounds = createBoundingRectangle(textureRegion);
-        this.tileMovement = Objects.requireNonNull(tileMovement);
+        this.movementProjection = Objects.requireNonNull(movementProjection);
         update();
     }
 
+    @Override
     public void update() {
         EntityMovement movement = entity.movementSnapshot();
-        tileMovement.moveRectangleBetweenTileCenters(
-                bounds,
-                movement.origin(),
-                movement.destination(),
-                movement.progress());
+        movementProjection.project(bounds, movement);
+        rotation = movement.rotation();
     }
 
+    @Override
     public void render(Batch batch) {
         drawTextureRegionUnscaled(
                 batch,
                 textureRegion,
                 bounds,
-                entity.movementSnapshot().direction().rotation());
+                rotation);
     }
 
     @Override

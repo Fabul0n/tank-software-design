@@ -1,4 +1,4 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.model;
 
 import com.badlogic.gdx.math.GridPoint2;
 
@@ -14,10 +14,6 @@ public enum Direction {
     Direction(int dx, int dy, float rotation) {
         this.vector = new GridPoint2(dx, dy);
         this.rotation = rotation;
-    }
-
-    public GridPoint2 vector() {
-        return new GridPoint2(vector);
     }
 
     public float rotation() {

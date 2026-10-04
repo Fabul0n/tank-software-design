@@ -1,8 +1,9 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.model;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 
@@ -10,8 +11,31 @@ import com.badlogic.gdx.math.GridPoint2;
 
 class TankTest {
     @Test
+    void usesConfiguredMoveTime() {
+        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true, 2f);
+        tank.move(Direction.UP);
+
+        tank.update(1f);
+        assertEquals(new com.badlogic.gdx.math.Vector2(1f, 1.5f),
+                tank.movementSnapshot().position(com.badlogic.gdx.math.Interpolation.linear));
+        assertTrue(tank.occupies(new GridPoint2(1, 1)));
+
+        tank.update(1f);
+        assertFalse(tank.isMoving());
+        assertTrue(tank.occupies(new GridPoint2(1, 2)));
+    }
+
+    @Test
+    void rejectsInvalidMoveTime() {
+        for (float duration : new float[] {0f, -1f, Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY}) {
+            assertThrows(IllegalArgumentException.class,
+                    () -> new Tank(new GridPoint2(), ignored -> true, duration));
+        }
+    }
+
+    @Test
     void startsIdleAtCoordinates() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true);
+        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true, 0.4f);
 
         assertTrue(tank.occupies(new GridPoint2(1, 1)));
         assertFalse(tank.isMoving());
@@ -22,7 +46,7 @@ class TankTest {
 
     @Test
     void movesToRequestedDirection() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true);
+        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true, 0.4f);
 
         assertTrue(tank.move(Direction.UP));
 
@@ -35,7 +59,7 @@ class TankTest {
 
     @Test
     void completesMovementAfterMoveTime() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true);
+        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true, 0.4f);
         tank.move(Direction.RIGHT);
 
         tank.update(0.2f);
@@ -57,7 +81,7 @@ class TankTest {
 
     @Test
     void rejectsNewMoveWhileMoving() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true);
+        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true, 0.4f);
         tank.move(Direction.RIGHT);
 
         assertFalse(tank.move(Direction.UP));
@@ -69,7 +93,7 @@ class TankTest {
 
     @Test
     void turnsButDoesNotMoveWhenTargetIsBlocked() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> false);
+        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> false, 0.4f);
 
         assertFalse(tank.move(Direction.LEFT));
 
@@ -82,7 +106,7 @@ class TankTest {
 
     @Test
     void exposesCurrentMovementState() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true);
+        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true, 0.4f);
 
         tank.move(Direction.UP);
         tank.update(0.2f);

@@ -1,10 +1,10 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.model;
 
 import java.util.Objects;
 
 import com.badlogic.gdx.math.GridPoint2;
 
-public abstract class Entity {
+public abstract class Entity implements MovementState {
     private final GridPoint2 coordinates;
     private Direction direction = Direction.RIGHT;
 
@@ -23,12 +23,9 @@ public abstract class Entity {
         return false;
     }
 
+    @Override
     public EntityMovement movementSnapshot() {
         return EntityMovement.idle(coordinates, direction);
-    }
-
-    protected GridPoint2 tile() {
-        return coordinates;
     }
 
     protected GridPoint2 tileCopy() {

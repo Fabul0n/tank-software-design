@@ -1,11 +1,13 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.model;
 
 import java.util.Objects;
 
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.math.Vector2;
 
-public class EntityMovement {
+public final class EntityMovement {
     private final GridPoint2 origin;
     private final GridPoint2 destination;
     private final Direction direction;
@@ -22,20 +24,16 @@ public class EntityMovement {
         return new EntityMovement(coordinates, coordinates, direction, 1f);
     }
 
-    public GridPoint2 origin() {
-        return new GridPoint2(origin);
+    /** Calculates the visible position in tile coordinates without exposing movement internals. */
+    public Vector2 position(Interpolation interpolation) {
+        float amount = Objects.requireNonNull(interpolation).apply(progress);
+        return new Vector2(
+                origin.x + (destination.x - origin.x) * amount,
+                origin.y + (destination.y - origin.y) * amount);
     }
 
-    public GridPoint2 destination() {
-        return new GridPoint2(destination);
-    }
-
-    public Direction direction() {
-        return direction;
-    }
-
-    public float progress() {
-        return progress;
+    public float rotation() {
+        return direction.rotation();
     }
 
     @Override

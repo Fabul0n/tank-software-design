@@ -1,4 +1,4 @@
-package ru.mipt.bit.platformer.decomposition;
+package ru.mipt.bit.platformer.decomposition.model;
 
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -7,15 +7,19 @@ import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.MathUtils;
 
 public class Tank extends Entity implements Movable {
-    private static final float MOVE_TIME_PER_TILE = 0.4f;
+    private final float moveTimePerTile;
 
     private final Predicate<GridPoint2> canMoveTo;
     private final GridPoint2 movementOrigin;
     private final GridPoint2 movementDestination;
     private float movementProgress = 1f;
 
-    public Tank(GridPoint2 coordinates, Predicate<GridPoint2> canMoveTo) {
+    public Tank(GridPoint2 coordinates, Predicate<GridPoint2> canMoveTo, float moveTimePerTile) {
         super(coordinates);
+        if (!Float.isFinite(moveTimePerTile) || moveTimePerTile <= 0f) {
+            throw new IllegalArgumentException("Move time per tile must be finite and positive");
+        }
+        this.moveTimePerTile = moveTimePerTile;
         this.canMoveTo = Objects.requireNonNull(canMoveTo);
         this.movementOrigin = tileCopy();
         this.movementDestination = tileCopy();
@@ -31,12 +35,12 @@ public class Tank extends Entity implements Movable {
 
         face(direction);
 
-        GridPoint2 target = direction.nextTile(tile());
+        GridPoint2 target = direction.nextTile(tileCopy());
         if (!canMoveTo.test(target)) {
             return false;
         }
 
-        movementOrigin.set(tile());
+        movementOrigin.set(tileCopy());
         movementDestination.set(target);
         movementProgress = 0f;
         return true;
@@ -48,7 +52,7 @@ public class Tank extends Entity implements Movable {
             return;
         }
 
-        movementProgress = MathUtils.clamp(movementProgress + deltaTime / MOVE_TIME_PER_TILE, 0f, 1f);
+        movementProgress = MathUtils.clamp(movementProgress + deltaTime / moveTimePerTile, 0f, 1f);
         if (!isMoving()) {
             placeAt(movementDestination);
         }

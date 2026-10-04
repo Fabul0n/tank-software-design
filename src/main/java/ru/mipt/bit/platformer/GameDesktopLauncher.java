@@ -4,6 +4,9 @@ import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.createSingleLayerMapRenderer;
 import static ru.mipt.bit.platformer.util.GdxGameUtils.getSingleLayer;
 
+import java.util.Arrays;
+
+import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
@@ -18,14 +21,16 @@ import com.badlogic.gdx.maps.tiled.TmxMapLoader;
 import com.badlogic.gdx.math.GridPoint2;
 import com.badlogic.gdx.math.Interpolation;
 
-import ru.mipt.bit.platformer.decomposition.EntityGraphics;
-import ru.mipt.bit.platformer.decomposition.GameRenderer;
-import ru.mipt.bit.platformer.decomposition.GameWorld;
-import ru.mipt.bit.platformer.decomposition.GdxKeyState;
-import ru.mipt.bit.platformer.decomposition.MovementButtonHandler;
-import ru.mipt.bit.platformer.decomposition.PlayerController;
-import ru.mipt.bit.platformer.decomposition.Tank;
-import ru.mipt.bit.platformer.decomposition.Tree;
+import ru.mipt.bit.platformer.decomposition.model.Direction;
+import ru.mipt.bit.platformer.decomposition.input.DirectionBinding;
+import ru.mipt.bit.platformer.decomposition.rendering.EntityGraphics;
+import ru.mipt.bit.platformer.decomposition.rendering.GameRenderer;
+import ru.mipt.bit.platformer.decomposition.model.GameWorld;
+import ru.mipt.bit.platformer.decomposition.input.GdxKeyState;
+import ru.mipt.bit.platformer.decomposition.input.MovementButtonHandler;
+import ru.mipt.bit.platformer.decomposition.input.PlayerController;
+import ru.mipt.bit.platformer.decomposition.model.Tank;
+import ru.mipt.bit.platformer.decomposition.model.Tree;
 import ru.mipt.bit.platformer.util.TileMovement;
 
 public class GameDesktopLauncher implements ApplicationListener {
@@ -52,7 +57,7 @@ public class GameDesktopLauncher implements ApplicationListener {
         gameWorld = new GameWorld(groundLayer.getWidth(), groundLayer.getHeight());
         gameRenderer = new GameRenderer();
 
-        Tank tank = new Tank(new GridPoint2(1, 1), gameWorld::isTileFree);
+        Tank tank = new Tank(new GridPoint2(1, 1), gameWorld::isTileFree, 0.4f);
         gameWorld.spawn(tank);
         gameRenderer.add(new EntityGraphics(
                 tank,
@@ -67,7 +72,11 @@ public class GameDesktopLauncher implements ApplicationListener {
                 tileMovement));
 
         playerController = new PlayerController(new GdxKeyState());
-        playerController.addButtonHandler(new MovementButtonHandler(tank));
+        playerController.addButtonHandler(new MovementButtonHandler(tank, Arrays.asList(
+                new DirectionBinding(Direction.UP, Keys.UP, Keys.W),
+                new DirectionBinding(Direction.DOWN, Keys.DOWN, Keys.S),
+                new DirectionBinding(Direction.LEFT, Keys.LEFT, Keys.A),
+                new DirectionBinding(Direction.RIGHT, Keys.RIGHT, Keys.D))));
     }
 
     @Override

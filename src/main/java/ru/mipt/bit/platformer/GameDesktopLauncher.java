@@ -1,125 +1,83 @@
 package ru.mipt.bit.platformer;
 
-import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
-import static ru.mipt.bit.platformer.util.GdxGameUtils.createSingleLayerMapRenderer;
-import static ru.mipt.bit.platformer.util.GdxGameUtils.getSingleLayer;
-
-import java.util.Arrays;
-
-import com.badlogic.gdx.Input.Keys;
-import com.badlogic.gdx.ApplicationListener;
+import java.io.IOException;
+import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.Random;
+import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.maps.MapRenderer;
-import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
-import com.badlogic.gdx.maps.tiled.TmxMapLoader;
-import com.badlogic.gdx.math.GridPoint2;
-import com.badlogic.gdx.math.Interpolation;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import ru.mipt.bit.platformer.game.MainCycle;
+import ru.mipt.bit.platformer.level.FileLevelSource;
+import ru.mipt.bit.platformer.level.LevelLayout;
+import ru.mipt.bit.platformer.level.LevelSource;
+import ru.mipt.bit.platformer.level.RandomLevelSource;
+import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
 
-import ru.mipt.bit.platformer.decomposition.model.Direction;
-import ru.mipt.bit.platformer.decomposition.input.DirectionBinding;
-import ru.mipt.bit.platformer.decomposition.rendering.EntityGraphics;
-import ru.mipt.bit.platformer.decomposition.rendering.GameRenderer;
-import ru.mipt.bit.platformer.decomposition.model.GameWorld;
-import ru.mipt.bit.platformer.decomposition.input.GdxKeyState;
-import ru.mipt.bit.platformer.decomposition.input.MovementButtonHandler;
-import ru.mipt.bit.platformer.decomposition.input.PlayerController;
-import ru.mipt.bit.platformer.decomposition.model.Tank;
-import ru.mipt.bit.platformer.decomposition.model.Tree;
-import ru.mipt.bit.platformer.util.TileMovement;
-
-public class GameDesktopLauncher implements ApplicationListener {
-
+public class GameDesktopLauncher extends ApplicationAdapter {
+    private static final int TILE_SIZE = 128;
+    private final LevelLayout level;
     private Batch batch;
+    private MainCycle cycle;
+    private FitViewport viewport;
 
-    private TiledMap level;
-    private MapRenderer levelRenderer;
-    private TileMovement tileMovement;
-
-    private GameWorld gameWorld;
-    private GameRenderer gameRenderer;
-    private PlayerController playerController;
+    public GameDesktopLauncher(LevelLayout level) {
+        this.level = Objects.requireNonNull(level);
+    }
 
     @Override
     public void create() {
         batch = new SpriteBatch();
-
-        level = new TmxMapLoader().load("level.tmx");
-        levelRenderer = createSingleLayerMapRenderer(level, batch);
-        TiledMapTileLayer groundLayer = getSingleLayer(level);
-        tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
-
-        gameWorld = new GameWorld(groundLayer.getWidth(), groundLayer.getHeight());
-        gameRenderer = new GameRenderer();
-
-        Tank tank = new Tank(new GridPoint2(1, 1), gameWorld::isTileFree, 0.4f);
-        gameWorld.spawn(tank);
-        gameRenderer.add(new EntityGraphics(
-                tank,
-                new Texture("images/tank_blue.png"),
-                tileMovement));
-
-        Tree tree = new Tree(new GridPoint2(1, 3));
-        gameWorld.spawn(tree);
-        gameRenderer.add(new EntityGraphics(
-                tree,
-                new Texture("images/greenTree.png"),
-                tileMovement));
-
-        playerController = new PlayerController(new GdxKeyState());
-        playerController.addButtonHandler(new MovementButtonHandler(tank, Arrays.asList(
-                new DirectionBinding(Direction.UP, Keys.UP, Keys.W),
-                new DirectionBinding(Direction.DOWN, Keys.DOWN, Keys.S),
-                new DirectionBinding(Direction.LEFT, Keys.LEFT, Keys.A),
-                new DirectionBinding(Direction.RIGHT, Keys.RIGHT, Keys.D))));
+        viewport = new FitViewport((float) level.widthInTiles() * TILE_SIZE,
+                (float) level.heightInTiles() * TILE_SIZE);
+        viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+        cycle = GameConstruction.create(batch, level, TILE_SIZE);
     }
 
     @Override
     public void render() {
         Gdx.gl.glClearColor(0f, 0f, 0.2f, 1f);
         Gdx.gl.glClear(GL_COLOR_BUFFER_BIT);
-
-        float deltaTime = Gdx.graphics.getDeltaTime();
-
-        playerController.update();
-        gameWorld.update(deltaTime);
-        gameRenderer.update();
-
-        levelRenderer.render();
-
-        batch.begin();
-        gameRenderer.render(batch);
-        batch.end();
+        batch.setProjectionMatrix(viewport.getCamera().combined);
+        cycle.render(Gdx.graphics.getDeltaTime(), batch);
     }
 
     @Override
     public void resize(int width, int height) {
-    }
-
-    @Override
-    public void pause() {
-    }
-
-    @Override
-    public void resume() {
+        viewport.update(width, height, true);
     }
 
     @Override
     public void dispose() {
-        gameRenderer.dispose();
-        gameWorld.clear();
-        level.dispose();
+        cycle.dispose();
         batch.dispose();
     }
 
-    public static void main(String[] args) {
+    static LevelSource selectLevelSource(String[] args) {
+        if (args.length == 0 || (args.length == 1 && args[0].equals("--random"))) {
+            return new RandomLevelSource(10, 8, 15, new Random());
+        }
+        if (args.length == 2 && args[0].equals("--file")) {
+            return new FileLevelSource(Paths.get(args[1]));
+        }
+        if ((args.length == 4 || args.length == 5) && args[0].equals("--random")) {
+            int width = Integer.parseInt(args[1]);
+            int height = Integer.parseInt(args[2]);
+            int trees = Integer.parseInt(args[3]);
+            Random random = args.length == 5 ? new Random(Long.parseLong(args[4])) : new Random();
+            return new RandomLevelSource(width, height, trees, random);
+        }
+        throw new IllegalArgumentException("Usage: --random [width height trees [seed]] | --file path");
+    }
+
+    public static void main(String[] args) throws IOException {
+        LevelLayout level = selectLevelSource(args).load();
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setWindowedMode(1280, 1024);
-        new Lwjgl3Application(new GameDesktopLauncher(), config);
+        new Lwjgl3Application(new GameDesktopLauncher(level), config);
     }
 }

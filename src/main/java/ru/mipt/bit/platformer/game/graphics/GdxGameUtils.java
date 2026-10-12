@@ -6,6 +6,8 @@ import com.badlogic.gdx.maps.Map;
 import com.badlogic.gdx.maps.MapLayer;
 import com.badlogic.gdx.maps.MapLayers;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
+import com.badlogic.gdx.maps.tiled.TiledMap;
+import com.badlogic.gdx.maps.tiled.tiles.StaticTiledMapTile;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 
@@ -17,6 +19,25 @@ import ru.mipt.bit.platformer.game.model.EntityMovement;
 public final class GdxGameUtils {
 
     private GdxGameUtils() {
+    }
+
+    public static TiledMap createGroundMap(int widthInTiles, int heightInTiles, int tileSize,
+            TextureRegion firstGrass, TextureRegion secondGrass) {
+        if (widthInTiles <= 0 || heightInTiles <= 0 || tileSize <= 0) {
+            throw new IllegalArgumentException("Map dimensions and tile size must be positive");
+        }
+        TiledMap map = new TiledMap();
+        TiledMapTileLayer layer = new TiledMapTileLayer(widthInTiles, heightInTiles, tileSize, tileSize);
+        StaticTiledMapTile firstTile = new StaticTiledMapTile(firstGrass);
+        StaticTiledMapTile secondTile = new StaticTiledMapTile(secondGrass);
+        for (int y = 0; y < heightInTiles; y++) {
+            for (int x = 0; x < widthInTiles; x++) {
+                layer.setCell(x, y, new TiledMapTileLayer.Cell().setTile(
+                        (x + y) % 2 == 0 ? firstTile : secondTile));
+            }
+        }
+        map.getLayers().add(layer);
+        return map;
     }
 
     public static <L extends MapLayer> L getSingleLayer(Map map) {

@@ -63,6 +63,9 @@ class GameFieldGraphicsTest {
                     if (method.getName().equals("getColor")) {
                         return new com.badlogic.gdx.graphics.Color(1, 1, 1, 1);
                     }
+                    if (method.getName().equals("getProjectionMatrix")) {
+                        return new com.badlogic.gdx.math.Matrix4();
+                    }
                     return null;
                 });
     }

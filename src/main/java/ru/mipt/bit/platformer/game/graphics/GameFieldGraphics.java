@@ -31,6 +31,8 @@ public class GameFieldGraphics implements Drawable {
 
     @Override
     public void draw(Batch batch) {
+        mapRenderer.setView(batch.getProjectionMatrix(), mapRenderer.getViewBounds().x,
+                mapRenderer.getViewBounds().y, mapRenderer.getViewBounds().width, mapRenderer.getViewBounds().height);
         mapRenderer.render();
         batch.begin();
         try {

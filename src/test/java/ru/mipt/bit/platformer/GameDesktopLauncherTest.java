@@ -9,6 +9,21 @@ import ru.mipt.bit.platformer.level.LevelLayout;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GameDesktopLauncherTest {
+    @Test
+    void configuresAiTankCountIndependentlyOfLevelSource() throws Exception {
+        assertEquals(3, GameDesktopLauncher.selectAiTankCount(new String[0]));
+        String[] args = {"--random", "5", "4", "2", "42", "--ai-tanks", "6"};
+        assertEquals(6, GameDesktopLauncher.selectAiTankCount(args));
+        LevelLayout level = GameDesktopLauncher.selectLevelSource(args).load();
+        assertEquals(5, level.widthInTiles());
+        assertEquals(4, level.heightInTiles());
+        assertEquals(0, GameDesktopLauncher.selectAiTankCount(new String[] {"--ai-tanks", "0"}));
+        assertThrows(IllegalArgumentException.class,
+                () -> GameDesktopLauncher.selectAiTankCount(new String[] {"--ai-tanks", "-1"}));
+        assertThrows(IllegalArgumentException.class,
+                () -> GameDesktopLauncher.selectLevelSource(new String[] {"--ai-tanks"}));
+    }
+
     @TempDir
     Path directory;
 
@@ -26,7 +41,7 @@ class GameDesktopLauncherTest {
     void selectsFileSource() throws Exception {
         Path file = directory.resolve("level with spaces.txt");
         Files.write(file, "TX_".getBytes(StandardCharsets.UTF_8));
-        LevelLayout level = GameDesktopLauncher.selectLevelSource(new String[] {"--file", file.toString()}).load();
+        LevelLayout level = GameDesktopLauncher.selectLevelSource(new String[] {"--file", file.toString(), "--ai-tanks", "0"}).load();
         assertEquals(3, level.widthInTiles());
         assertEquals(LevelLayout.Cell.PLAYER, level.cellAt(1, 0));
     }

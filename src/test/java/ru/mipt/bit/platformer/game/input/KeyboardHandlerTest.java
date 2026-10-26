@@ -16,7 +16,7 @@ class KeyboardHandlerTest {
         KeyboardHandler handler = new KeyboardHandler(key -> key == 2);
         handler.bind(() -> calls.add("action"), 1, 2);
 
-        handler.handle();
+        handler.handle(0.1f);
 
         assertEquals(Arrays.asList("action"), calls);
     }
@@ -25,7 +25,7 @@ class KeyboardHandlerTest {
     void ignoresUnboundKeys() {
         KeyboardHandler handler = new KeyboardHandler(key -> key == 3);
         handler.bind(() -> fail("Unpressed binding was executed"), 1, 2);
-        handler.handle();
+        handler.handle(0.1f);
     }
 
     @Test
@@ -35,7 +35,7 @@ class KeyboardHandlerTest {
         handler.bind(() -> calls.add("first"), 1, 2);
         handler.bind(() -> calls.add("second"), 3);
 
-        handler.handle();
+        handler.handle(0.1f);
 
         assertEquals(Arrays.asList("first"), calls);
     }
@@ -47,7 +47,7 @@ class KeyboardHandlerTest {
         handler.bind(new MoveAction(tank, Direction.UP), 1);
         handler.bind(() -> fail("A lower-priority action was executed"), 2);
 
-        handler.handle();
+        handler.handle(0.1f);
 
         assertFalse(tank.isMoving());
         assertEquals(90f, tank.movementSnapshot().rotation());
@@ -61,7 +61,7 @@ class KeyboardHandlerTest {
         handler.bind(() -> calls.add("action"), keys);
         keys[0] = 2;
 
-        handler.handle();
+        handler.handle(0.1f);
 
         assertEquals(Arrays.asList("action"), calls);
     }

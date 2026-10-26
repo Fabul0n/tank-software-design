@@ -12,6 +12,29 @@ import com.badlogic.gdx.math.GridPoint2;
 
 class TankTest {
     @Test
+    void checksMovementWithoutTurningMovingOrReservingCells() {
+        Tank tank = new Tank(new GridPoint2(1, 1), tile -> tile.equals(new GridPoint2(2, 1)), 0.4f);
+        assertTrue(tank.canMove(Direction.UP));
+        assertFalse(tank.canMove(Direction.RIGHT));
+        assertFalse(tank.isMoving());
+        assertEquals(0f, tank.movementSnapshot().rotation());
+        assertTrue(tank.occupies(new GridPoint2(1, 1)));
+        assertFalse(tank.occupies(new GridPoint2(1, 2)));
+        assertThrows(NullPointerException.class, () -> tank.canMove(null));
+    }
+
+    @Test
+    void cannotStartAnotherMoveUntilCurrentMoveCompletes() {
+        Tank tank = new Tank(new GridPoint2(1, 1), tile -> false, 0.4f);
+        assertTrue(tank.move(Direction.UP));
+        for (Direction direction : Direction.values()) {
+            assertFalse(tank.canMove(direction));
+        }
+        tank.update(0.4f);
+        assertTrue(tank.canMove(Direction.DOWN));
+    }
+
+    @Test
     void ownsItsCoordinatesAndRejectsNullDependencies() {
         GridPoint2 coordinates = new GridPoint2(1, 2);
         Tank tank = new Tank(coordinates, tile -> false, 0.4f);

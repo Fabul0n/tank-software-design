@@ -4,8 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import ru.mipt.bit.platformer.game.input.keyboard.Keyboard;
+import ru.mipt.bit.platformer.game.control.ControlStrategy;
 
-public class KeyboardHandler {
+public class KeyboardHandler implements ControlStrategy {
     private final Keyboard keyboard;
     private final List<Binding> bindings = new ArrayList<>();
 
@@ -17,7 +18,8 @@ public class KeyboardHandler {
         bindings.add(new Binding(action, keyCodes));
     }
 
-    public void handle() {
+    @Override
+    public void handle(float deltaTime) {
         for (Binding binding : bindings) {
             if (binding.handle(keyboard)) {
                 return;

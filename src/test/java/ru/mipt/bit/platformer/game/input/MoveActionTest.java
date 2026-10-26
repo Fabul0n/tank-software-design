@@ -36,6 +36,16 @@ class MoveActionTest {
         }
 
         @Override
+        public boolean canMove(Direction direction) {
+            return true;
+        }
+
+        @Override
+        public boolean isMoving() {
+            return false;
+        }
+
+        @Override
         public void update(float deltaTime) {
         }
 

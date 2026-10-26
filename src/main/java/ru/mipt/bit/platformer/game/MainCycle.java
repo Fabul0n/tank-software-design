@@ -1,24 +1,29 @@
 package ru.mipt.bit.platformer.game;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.utils.Disposable;
+import ru.mipt.bit.platformer.game.control.ControlStrategy;
 import ru.mipt.bit.platformer.game.graphics.Drawable;
-import ru.mipt.bit.platformer.game.input.KeyboardHandler;
 
 public final class MainCycle implements Disposable {
-    private final KeyboardHandler keyboardHandler;
+    private final List<ControlStrategy> controllers;
     private final GameField gameField;
     private final Drawable graphics;
 
-    public MainCycle(KeyboardHandler keyboardHandler, GameField gameField, Drawable graphics) {
-        this.keyboardHandler = Objects.requireNonNull(keyboardHandler);
+    public MainCycle(List<? extends ControlStrategy> controllers, GameField gameField, Drawable graphics) {
+        this.controllers = new ArrayList<>(Objects.requireNonNull(controllers));
+        this.controllers.forEach(Objects::requireNonNull);
         this.gameField = Objects.requireNonNull(gameField);
         this.graphics = Objects.requireNonNull(graphics);
     }
 
     public void render(float deltaTime, Batch batch) {
-        keyboardHandler.handle();
+        for (ControlStrategy controller : controllers) {
+            controller.handle(deltaTime);
+        }
         gameField.update(deltaTime);
         graphics.draw(batch);
     }

@@ -39,15 +39,20 @@ public class Tank implements Movable {
 
         this.direction = direction;
 
-        GridPoint2 targetTile = direction.nextTile(coordinates);
-        if (obstacleDetector.isTileOccupied(targetTile)) {
+        if (!canMove(direction)) {
             return false;
         }
 
         movementOrigin.set(coordinates);
-        movementDestination.set(targetTile);
+        movementDestination.set(direction.nextTile(coordinates));
         movementProgress = 0f;
         return true;
+    }
+
+    @Override
+    public boolean canMove(Direction direction) {
+        Objects.requireNonNull(direction);
+        return !isMoving() && !obstacleDetector.isTileOccupied(direction.nextTile(coordinates));
     }
 
     @Override
@@ -62,13 +67,14 @@ public class Tank implements Movable {
         }
     }
 
+    @Override
     public boolean isMoving() {
         return movementProgress < 1f;
     }
 
     @Override
     public boolean occupies(GridPoint2 tile) {
-        return coordinates.equals(tile);
+        return coordinates.equals(tile) || (isMoving() && movementDestination.equals(tile));
     }
 
     public EntityMovement movementSnapshot() {

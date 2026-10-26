@@ -1,179 +1,115 @@
 package ru.mipt.bit.platformer;
 
-import com.badlogic.gdx.ApplicationListener;
+import java.io.IOException;
+import java.util.Arrays;
+import java.nio.file.Paths;
+import java.util.Objects;
+import java.util.Random;
+import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.maps.MapRenderer;
-import com.badlogic.gdx.maps.tiled.TiledMap;
-import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
-import com.badlogic.gdx.maps.tiled.TmxMapLoader;
-import com.badlogic.gdx.math.GridPoint2;
-import com.badlogic.gdx.math.Interpolation;
-import com.badlogic.gdx.math.Rectangle;
-import ru.mipt.bit.platformer.util.TileMovement;
-
-import static com.badlogic.gdx.Input.Keys.*;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import ru.mipt.bit.platformer.game.MainCycle;
+import ru.mipt.bit.platformer.level.FileLevelSource;
+import ru.mipt.bit.platformer.level.LevelLayout;
+import ru.mipt.bit.platformer.level.LevelSource;
+import ru.mipt.bit.platformer.level.RandomLevelSource;
 import static com.badlogic.gdx.graphics.GL20.GL_COLOR_BUFFER_BIT;
-import static com.badlogic.gdx.math.MathUtils.isEqual;
-import static ru.mipt.bit.platformer.util.GdxGameUtils.*;
 
-public class GameDesktopLauncher implements ApplicationListener {
-
-    private static final float MOVEMENT_SPEED = 0.4f;
-
+public class GameDesktopLauncher extends ApplicationAdapter {
+    private static final int TILE_SIZE = 128;
+    private final LevelLayout level;
+    private final int aiTankCount;
+    private final Random random;
     private Batch batch;
+    private MainCycle cycle;
+    private FitViewport viewport;
 
-    private TiledMap level;
-    private MapRenderer levelRenderer;
-    private TileMovement tileMovement;
-
-    private Texture blueTankTexture;
-    private TextureRegion playerGraphics;
-    private Rectangle playerRectangle;
-    // player current position coordinates on level 10x8 grid (e.g. x=0, y=1)
-    private GridPoint2 playerCoordinates;
-    // which tile the player want to go next
-    private GridPoint2 playerDestinationCoordinates;
-    private float playerMovementProgress = 1f;
-    private float playerRotation;
-
-    private Texture greenTreeTexture;
-    private TextureRegion treeObstacleGraphics;
-    private GridPoint2 treeObstacleCoordinates = new GridPoint2();
-    private Rectangle treeObstacleRectangle = new Rectangle();
+    public GameDesktopLauncher(LevelLayout level, int aiTankCount, Random random) {
+        this.level = Objects.requireNonNull(level);
+        if (aiTankCount < 0) {
+            throw new IllegalArgumentException("AI tank count must not be negative");
+        }
+        this.aiTankCount = aiTankCount;
+        this.random = Objects.requireNonNull(random);
+    }
 
     @Override
     public void create() {
         batch = new SpriteBatch();
-
-        // load level tiles
-        level = new TmxMapLoader().load("level.tmx");
-        levelRenderer = createSingleLayerMapRenderer(level, batch);
-        TiledMapTileLayer groundLayer = getSingleLayer(level);
-        tileMovement = new TileMovement(groundLayer, Interpolation.smooth);
-
-        // Texture decodes an image file and loads it into GPU memory, it represents a native resource
-        blueTankTexture = new Texture("images/tank_blue.png");
-        // TextureRegion represents Texture portion, there may be many TextureRegion instances of the same Texture
-        playerGraphics = new TextureRegion(blueTankTexture);
-        playerRectangle = createBoundingRectangle(playerGraphics);
-        // set player initial position
-        playerDestinationCoordinates = new GridPoint2(1, 1);
-        playerCoordinates = new GridPoint2(playerDestinationCoordinates);
-        playerRotation = 0f;
-
-        greenTreeTexture = new Texture("images/greenTree.png");
-        treeObstacleGraphics = new TextureRegion(greenTreeTexture);
-        treeObstacleCoordinates = new GridPoint2(1, 3);
-        treeObstacleRectangle = createBoundingRectangle(treeObstacleGraphics);
-        moveRectangleAtTileCenter(groundLayer, treeObstacleRectangle, treeObstacleCoordinates);
+        viewport = new FitViewport((float) level.widthInTiles() * TILE_SIZE,
+                (float) level.heightInTiles() * TILE_SIZE);
+        viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), true);
+        cycle = GameConstruction.create(batch, level, TILE_SIZE, aiTankCount, random);
     }
 
     @Override
     public void render() {
-        // clear the screen
         Gdx.gl.glClearColor(0f, 0f, 0.2f, 1f);
         Gdx.gl.glClear(GL_COLOR_BUFFER_BIT);
-
-        // get time passed since the last render
-        float deltaTime = Gdx.graphics.getDeltaTime();
-
-        if (Gdx.input.isKeyPressed(UP) || Gdx.input.isKeyPressed(W)) {
-            if (isEqual(playerMovementProgress, 1f)) {
-                // check potential player destination for collision with obstacles
-                if (!treeObstacleCoordinates.equals(incrementedY(playerCoordinates))) {
-                    playerDestinationCoordinates.y++;
-                    playerMovementProgress = 0f;
-                }
-                playerRotation = 90f;
-            }
-        }
-        if (Gdx.input.isKeyPressed(LEFT) || Gdx.input.isKeyPressed(A)) {
-            if (isEqual(playerMovementProgress, 1f)) {
-                if (!treeObstacleCoordinates.equals(decrementedX(playerCoordinates))) {
-                    playerDestinationCoordinates.x--;
-                    playerMovementProgress = 0f;
-                }
-                playerRotation = -180f;
-            }
-        }
-        if (Gdx.input.isKeyPressed(DOWN) || Gdx.input.isKeyPressed(S)) {
-            if (isEqual(playerMovementProgress, 1f)) {
-                if (!treeObstacleCoordinates.equals(decrementedY(playerCoordinates))) {
-                    playerDestinationCoordinates.y--;
-                    playerMovementProgress = 0f;
-                }
-                playerRotation = -90f;
-            }
-        }
-        if (Gdx.input.isKeyPressed(RIGHT) || Gdx.input.isKeyPressed(D)) {
-            if (isEqual(playerMovementProgress, 1f)) {
-                if (!treeObstacleCoordinates.equals(incrementedX(playerCoordinates))) {
-                    playerDestinationCoordinates.x++;
-                    playerMovementProgress = 0f;
-                }
-                playerRotation = 0f;
-            }
-        }
-
-        // calculate interpolated player screen coordinates
-        tileMovement.moveRectangleBetweenTileCenters(playerRectangle, playerCoordinates, playerDestinationCoordinates, playerMovementProgress);
-
-        playerMovementProgress = continueProgress(playerMovementProgress, deltaTime, MOVEMENT_SPEED);
-        if (isEqual(playerMovementProgress, 1f)) {
-            // record that the player has reached his/her destination
-            playerCoordinates.set(playerDestinationCoordinates);
-        }
-
-        // render each tile of the level
-        levelRenderer.render();
-
-        // start recording all drawing commands
-        batch.begin();
-
-        // render player
-        drawTextureRegionUnscaled(batch, playerGraphics, playerRectangle, playerRotation);
-
-        // render tree obstacle
-        drawTextureRegionUnscaled(batch, treeObstacleGraphics, treeObstacleRectangle, 0f);
-
-        // submit all drawing requests
-        batch.end();
+        batch.setProjectionMatrix(viewport.getCamera().combined);
+        cycle.render(Gdx.graphics.getDeltaTime(), batch);
     }
 
     @Override
     public void resize(int width, int height) {
-        // do not react to window resizing
-    }
-
-    @Override
-    public void pause() {
-        // game doesn't get paused
-    }
-
-    @Override
-    public void resume() {
-        // game doesn't get paused
+        viewport.update(width, height, true);
     }
 
     @Override
     public void dispose() {
-        // dispose of all the native resources (classes which implement com.badlogic.gdx.utils.Disposable)
-        greenTreeTexture.dispose();
-        blueTankTexture.dispose();
-        level.dispose();
+        cycle.dispose();
         batch.dispose();
     }
 
-    public static void main(String[] args) {
+    static int selectAiTankCount(String[] args) {
+        int count = 3;
+        if (args.length >= 2 && args[args.length - 2].equals("--ai-tanks")) {
+            count = Integer.parseInt(args[args.length - 1]);
+        }
+        if (count < 0) {
+            throw new IllegalArgumentException("AI tank count must not be negative");
+        }
+        return count;
+    }
+
+    private static String[] levelArguments(String[] args) {
+        selectAiTankCount(args);
+        if (args.length >= 2 && args[args.length - 2].equals("--ai-tanks")) {
+            return Arrays.copyOf(args, args.length - 2);
+        }
+        return args;
+    }
+
+    static LevelSource selectLevelSource(String[] args) {
+        args = levelArguments(args);
+        if (args.length == 0 || (args.length == 1 && args[0].equals("--random"))) {
+            return new RandomLevelSource(10, 8, 15, new Random());
+        }
+        if (args.length == 2 && args[0].equals("--file")) {
+            return new FileLevelSource(Paths.get(args[1]));
+        }
+        if ((args.length == 4 || args.length == 5) && args[0].equals("--random")) {
+            int width = Integer.parseInt(args[1]);
+            int height = Integer.parseInt(args[2]);
+            int trees = Integer.parseInt(args[3]);
+            Random random = args.length == 5 ? new Random(Long.parseLong(args[4])) : new Random();
+            return new RandomLevelSource(width, height, trees, random);
+        }
+        throw new IllegalArgumentException("Usage: (--random [width height trees [seed]] | --file path) [--ai-tanks count]");
+    }
+
+    public static void main(String[] args) throws IOException {
+        LevelLayout level = selectLevelSource(args).load();
+        int aiTankCount = selectAiTankCount(args);
+        String[] levelArgs = levelArguments(args);
+        Random random = levelArgs.length == 5 && levelArgs[0].equals("--random")
+                ? new Random(Long.parseLong(levelArgs[4])) : new Random();
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
-        // level width: 10 tiles x 128px, height: 8 tiles x 128px
         config.setWindowedMode(1280, 1024);
-        new Lwjgl3Application(new GameDesktopLauncher(), config);
+        new Lwjgl3Application(new GameDesktopLauncher(level, aiTankCount, random), config);
     }
 }

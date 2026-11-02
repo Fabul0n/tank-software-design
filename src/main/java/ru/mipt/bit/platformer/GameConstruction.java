@@ -29,6 +29,10 @@ import ru.mipt.bit.platformer.game.input.MoveAction;
 import ru.mipt.bit.platformer.game.input.keyboard.GdxKeyboard;
 import ru.mipt.bit.platformer.game.model.Tank;
 import ru.mipt.bit.platformer.game.model.Tree;
+import ru.mipt.bit.platformer.game.model.Bullet;
+import ru.mipt.bit.platformer.game.graphics.BulletDrawable;
+import ru.mipt.bit.platformer.game.input.ShootAction;
+import ru.mipt.bit.platformer.game.input.CommandQueue;
 
 public final class GameConstruction {
     private GameConstruction() {
@@ -36,11 +40,11 @@ public final class GameConstruction {
 
     public static MainCycle create(Batch batch, LevelLayout level, int tileSize, int aiTankCount, Random random) {
         GameField field = new GameField(level.widthInTiles(), level.heightInTiles());
-        KeyboardHandler keyboardHandler = new KeyboardHandler(new GdxKeyboard());
+        CommandQueue commands = new CommandQueue();
+        KeyboardHandler keyboardHandler = new KeyboardHandler(new GdxKeyboard(), commands);
+        KeyboardHandler.ActionGroup movement = keyboardHandler.createGroup(KeyboardHandler.Priority.LAST_PRESSED);
         List<ControlStrategy> controllers = new ArrayList<>();
         controllers.add(keyboardHandler);
-        List<Tank> tanks = new ArrayList<>();
-        List<Tree> trees = new ArrayList<>();
         float secondsPerTile = 0.4f;
 
         for (int y = 0; y < level.heightInTiles(); y++) {
@@ -50,16 +54,15 @@ public final class GameConstruction {
                     case PLAYER:
                         Tank tank = new Tank(position, field, secondsPerTile);
                         field.spawn(tank);
-                        tanks.add(tank);
-                        keyboardHandler.bind(new MoveAction(tank, Direction.UP), Keys.UP, Keys.W);
-                        keyboardHandler.bind(new MoveAction(tank, Direction.DOWN), Keys.DOWN, Keys.S);
-                        keyboardHandler.bind(new MoveAction(tank, Direction.LEFT), Keys.LEFT, Keys.A);
-                        keyboardHandler.bind(new MoveAction(tank, Direction.RIGHT), Keys.RIGHT, Keys.D);
+                        keyboardHandler.createGroup().bind(new ShootAction(tank), Keys.SPACE);
+                        movement.bind(new MoveAction(tank, Direction.UP), Keys.UP, Keys.W);
+                        movement.bind(new MoveAction(tank, Direction.DOWN), Keys.DOWN, Keys.S);
+                        movement.bind(new MoveAction(tank, Direction.LEFT), Keys.LEFT, Keys.A);
+                        movement.bind(new MoveAction(tank, Direction.RIGHT), Keys.RIGHT, Keys.D);
                         break;
                     case TREE:
                         Tree tree = new Tree(position);
                         field.spawn(tree);
-                        trees.add(tree);
                         break;
                     case EMPTY:
                         break;
@@ -68,9 +71,8 @@ public final class GameConstruction {
         }
         List<Tank> aiTanks = new RandomTankSpawner(random, secondsPerTile).spawn(field, level, aiTankCount);
         for (Tank tank : aiTanks) {
-            controllers.add(new RandomController(tank, random, secondsPerTile));
+            controllers.add(new RandomController(tank, new ShootAction(tank), commands, random, secondsPerTile));
         }
-        tanks.addAll(aiTanks);
 
         Texture firstGrass = new Texture("images/tileGrass1.png");
         Texture secondGrass = new Texture("images/tileGrass2.png");
@@ -81,13 +83,19 @@ public final class GameConstruction {
         mapResources.add(secondGrass);
         map.setOwnedResources(mapResources);
         TiledMapTileLayer layer = GdxGameUtils.getSingleLayer(map);
-        GameFieldGraphics graphics = new GameFieldGraphics(field, map, batch);
-        for (Tank tank : tanks) {
-            graphics.add(new TankDrawable(tank, new Texture("images/tank_blue.png"), layer, Interpolation.smooth));
-        }
-        for (Tree tree : trees) {
-            graphics.add(new TreeDrawable(tree, new Texture("images/greenTree.png"), layer, Interpolation.smooth));
-        }
-        return new MainCycle(controllers, field, graphics);
+        GameFieldGraphics graphics = new GameFieldGraphics(field, map, batch, object -> {
+            if (object instanceof Tank) {
+                return new TankDrawable((Tank) object, new Texture("images/tank_blue.png"), layer, Interpolation.smooth);
+            }
+            if (object instanceof Tree) {
+                return new TreeDrawable((Tree) object, new Texture("images/greenTree.png"), layer, Interpolation.smooth);
+            }
+            if (object instanceof Bullet) {
+                return new BulletDrawable((Bullet) object, new Texture("images/bullet.png"), tileSize);
+            }
+            throw new IllegalArgumentException("Unsupported drawable: " + object.getClass());
+        });
+
+        return new MainCycle(controllers, commands, field, graphics);
     }
 }

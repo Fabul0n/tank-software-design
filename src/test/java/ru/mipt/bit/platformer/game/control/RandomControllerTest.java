@@ -8,6 +8,7 @@ import java.util.Random;
 import java.util.Set;
 import com.badlogic.gdx.math.GridPoint2;
 import org.junit.jupiter.api.Test;
+import static ru.mipt.bit.platformer.game.TestWorld.detecting;
 import ru.mipt.bit.platformer.game.Direction;
 import ru.mipt.bit.platformer.game.GameField;
 import ru.mipt.bit.platformer.game.Movable;
@@ -83,7 +84,7 @@ class RandomControllerTest {
 
     @Test
     void boxedInTankStandsWithoutChoosingOrTurning() {
-        Tank tank = new Tank(new GridPoint2(1, 1), tile -> true, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(tile -> true), 0.4f);
         SequenceRandom random = new SequenceRandom();
         RandomController controller = new RandomController(tank, random, 0.4f);
 
@@ -194,7 +195,7 @@ class RandomControllerTest {
 
     @Test
     void standingStillPreservesOrientationAndPosition() {
-        Tank tank = new Tank(new GridPoint2(1, 1), tile -> false, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(tile -> false), 0.4f);
         new RandomController(tank, new SequenceRandom(7), 0.4f).handle(0f);
         assertFalse(tank.isMoving());
         assertTrue(tank.occupies(new GridPoint2(1, 1)));
@@ -273,13 +274,6 @@ class RandomControllerTest {
             return moving;
         }
 
-        @Override
-        public boolean occupies(GridPoint2 tile) {
-            return false;
-        }
 
-        @Override
-        public void update(float deltaTime) {
-        }
     }
 }

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
+import java.util.function.Consumer;
 import ru.mipt.bit.platformer.game.Direction;
 import ru.mipt.bit.platformer.game.Movable;
 import ru.mipt.bit.platformer.game.input.Action;
@@ -13,12 +14,21 @@ import ru.mipt.bit.platformer.game.input.MoveAction;
 
 public final class RandomController implements ControlStrategy {
     private final Movable movable;
+    private final Action shootAction;
+    private final Consumer<Action> commands;
     private final Random random;
     private final Map<Direction, Action> movementCommands = new EnumMap<>(Direction.class);
     private final float decisionIntervalSeconds;
     private double elapsedSeconds;
 
     public RandomController(Movable movable, Random random, float decisionIntervalSeconds) {
+        this(movable, () -> {}, Action::execute, random, decisionIntervalSeconds);
+    }
+
+    public RandomController(Movable movable, Action shootAction, Consumer<Action> commands,
+            Random random, float decisionIntervalSeconds) {
+        this.shootAction = Objects.requireNonNull(shootAction);
+        this.commands = Objects.requireNonNull(commands);
         this.movable = Objects.requireNonNull(movable);
         this.random = Objects.requireNonNull(random);
         if (!Float.isFinite(decisionIntervalSeconds) || decisionIntervalSeconds <= 0f) {
@@ -48,11 +58,14 @@ public final class RandomController implements ControlStrategy {
             }
         }
         if (availableCommands.isEmpty()) {
+            commands.accept(shootAction);
             return;
         }
         int outcome = random.nextInt(availableCommands.size() * 2);
         if (outcome < availableCommands.size()) {
-            availableCommands.get(outcome).execute();
+            commands.accept(availableCommands.get(outcome));
+        } else {
+            commands.accept(shootAction);
         }
     }
 }

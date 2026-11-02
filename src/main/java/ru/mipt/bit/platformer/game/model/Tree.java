@@ -13,10 +13,6 @@ public class Tree implements Obstacle {
     }
 
     @Override
-    public void update(float deltaTime) {
-    }
-
-    @Override
     public boolean occupies(GridPoint2 tile) {
         return coordinates.equals(tile);
     }

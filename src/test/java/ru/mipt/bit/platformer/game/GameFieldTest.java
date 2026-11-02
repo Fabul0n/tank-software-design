@@ -71,7 +71,7 @@ class GameFieldTest {
     @Test
     void updatesSpawnedEntities() {
         GameField world = new GameField(3, 3);
-        Tank tank = new Tank(new GridPoint2(0, 0), world::isTileOccupied, 0.4f);
+        Tank tank = new Tank(new GridPoint2(0, 0), world, 0.4f);
         world.spawn(tank);
 
         tank.move(Direction.RIGHT);
@@ -107,9 +107,6 @@ class GameFieldTest {
             this.blockedTile = blockedTile;
         }
 
-        @Override
-        public void update(float deltaTime) {
-        }
 
         @Override
         public boolean occupies(GridPoint2 coordinates) {

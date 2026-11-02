@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
+import static ru.mipt.bit.platformer.game.TestWorld.detecting;
 import ru.mipt.bit.platformer.game.Direction;
 
 import com.badlogic.gdx.math.GridPoint2;
@@ -13,7 +14,7 @@ import com.badlogic.gdx.math.GridPoint2;
 class TankTest {
     @Test
     void checksMovementWithoutTurningMovingOrReservingCells() {
-        Tank tank = new Tank(new GridPoint2(1, 1), tile -> tile.equals(new GridPoint2(2, 1)), 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(tile -> tile.equals(new GridPoint2(2, 1))), 0.4f);
         assertTrue(tank.canMove(Direction.UP));
         assertFalse(tank.canMove(Direction.RIGHT));
         assertFalse(tank.isMoving());
@@ -25,7 +26,7 @@ class TankTest {
 
     @Test
     void cannotStartAnotherMoveUntilCurrentMoveCompletes() {
-        Tank tank = new Tank(new GridPoint2(1, 1), tile -> false, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(tile -> false), 0.4f);
         assertTrue(tank.move(Direction.UP));
         for (Direction direction : Direction.values()) {
             assertFalse(tank.canMove(direction));
@@ -37,16 +38,16 @@ class TankTest {
     @Test
     void ownsItsCoordinatesAndRejectsNullDependencies() {
         GridPoint2 coordinates = new GridPoint2(1, 2);
-        Tank tank = new Tank(coordinates, tile -> false, 0.4f);
+        Tank tank = new Tank(coordinates, detecting(tile -> false), 0.4f);
         coordinates.set(10, 20);
         assertTrue(tank.occupies(new GridPoint2(1, 2)));
-        assertThrows(NullPointerException.class, () -> new Tank(null, tile -> false, 0.4f));
+        assertThrows(NullPointerException.class, () -> new Tank(null, detecting(tile -> false), 0.4f));
         assertThrows(NullPointerException.class, () -> new Tank(new GridPoint2(), null, 0.4f));
     }
 
     @Test
     void usesConfiguredMoveTime() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> false, 2f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(ignored -> false), 2f);
         tank.move(Direction.UP);
 
         tank.update(1f);
@@ -63,13 +64,13 @@ class TankTest {
     void rejectsInvalidMoveTime() {
         for (float duration : new float[] {0f, -1f, Float.NaN, Float.POSITIVE_INFINITY, Float.NEGATIVE_INFINITY}) {
             assertThrows(IllegalArgumentException.class,
-                    () -> new Tank(new GridPoint2(), ignored -> false, duration));
+                    () -> new Tank(new GridPoint2(), detecting(ignored -> false), duration));
         }
     }
 
     @Test
     void startsIdleAtCoordinates() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> false, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(ignored -> false), 0.4f);
 
         assertTrue(tank.occupies(new GridPoint2(1, 1)));
         assertFalse(tank.isMoving());
@@ -80,7 +81,7 @@ class TankTest {
 
     @Test
     void movesToRequestedDirection() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> false, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(ignored -> false), 0.4f);
 
         assertTrue(tank.move(Direction.UP));
 
@@ -93,7 +94,7 @@ class TankTest {
 
     @Test
     void completesMovementAfterMoveTime() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> false, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(ignored -> false), 0.4f);
         tank.move(Direction.RIGHT);
 
         tank.update(0.2f);
@@ -115,7 +116,7 @@ class TankTest {
 
     @Test
     void rejectsNewMoveWhileMoving() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> false, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(ignored -> false), 0.4f);
         tank.move(Direction.RIGHT);
 
         assertFalse(tank.move(Direction.UP));
@@ -127,7 +128,7 @@ class TankTest {
 
     @Test
     void turnsButDoesNotMoveWhenTargetIsBlocked() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> true, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(ignored -> true), 0.4f);
 
         assertFalse(tank.move(Direction.LEFT));
 
@@ -140,7 +141,7 @@ class TankTest {
 
     @Test
     void exposesCurrentMovementState() {
-        Tank tank = new Tank(new GridPoint2(1, 1), ignored -> false, 0.4f);
+        Tank tank = new Tank(new GridPoint2(1, 1), detecting(ignored -> false), 0.4f);
 
         tank.move(Direction.UP);
         tank.update(0.2f);

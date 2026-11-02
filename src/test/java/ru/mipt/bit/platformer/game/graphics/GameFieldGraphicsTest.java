@@ -9,6 +9,8 @@ import com.badlogic.gdx.maps.tiled.TiledMap;
 import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import org.junit.jupiter.api.Test;
 import ru.mipt.bit.platformer.game.GameField;
+import ru.mipt.bit.platformer.game.model.Tree;
+import com.badlogic.gdx.math.GridPoint2;
 import static org.junit.jupiter.api.Assertions.*;
 
 class GameFieldGraphicsTest {
@@ -24,8 +26,9 @@ class GameFieldGraphicsTest {
             }
         };
         map.getLayers().add(new TiledMapTileLayer(2, 3, 128, 128));
-        GameFieldGraphics graphics = new GameFieldGraphics(new GameField(2, 3), map, batch);
-        graphics.add(new Drawable() {
+        GameField field = new GameField(2, 3);
+        field.spawn(new Tree(new GridPoint2(0, 0)));
+        GameFieldGraphics graphics = new GameFieldGraphics(field, map, batch, object -> new Drawable() {
             @Override
             public void draw(Batch supplied) {
                 assertSame(batch, supplied);
@@ -50,8 +53,36 @@ class GameFieldGraphicsTest {
         TiledMap map = new TiledMap();
         map.getLayers().add(new TiledMapTileLayer(2, 3, 128, 128));
         assertThrows(IllegalArgumentException.class, () -> new GameFieldGraphics(
-                new GameField(3, 3), map, recordingBatch(new ArrayList<>())));
+                new GameField(3, 3), map, recordingBatch(new ArrayList<>()), object -> null));
         map.dispose();
+    }
+
+    @Test
+    void followsSpawnsAndRemovalsAndUnsubscribesOnDispose() {
+        List<String> calls = new ArrayList<>();
+        GameField field = new GameField(2, 3);
+        TiledMap map = new TiledMap();
+        map.getLayers().add(new TiledMapTileLayer(2, 3, 128, 128));
+        Batch batch = recordingBatch(calls);
+        GameFieldGraphics graphics = new GameFieldGraphics(field, map, batch, object -> {
+            calls.add("created");
+            return new Drawable() {
+                public void draw(Batch supplied) { calls.add("drawn"); }
+                public void dispose() { calls.add("disposed"); }
+            };
+        });
+        Tree tree = new Tree(new GridPoint2(0, 0));
+        field.spawn(tree);
+        graphics.draw(batch);
+        field.remove(tree);
+        field.remove(tree);
+        graphics.draw(batch);
+        graphics.dispose();
+        field.spawn(new Tree(new GridPoint2(1, 1)));
+
+        assertEquals(1, calls.stream().filter("created"::equals).count());
+        assertEquals(1, calls.stream().filter("drawn"::equals).count());
+        assertEquals(1, calls.stream().filter("disposed"::equals).count());
     }
 
     private Batch recordingBatch(List<String> calls) {

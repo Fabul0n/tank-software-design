@@ -31,7 +31,8 @@ class MainCycleTest {
         field.spawn(new Tree(treeTile));
         boolean[] pressed = {true};
         KeyboardHandler keyboard = new KeyboardHandler(key -> pressed[0]);
-        keyboard.bind(new MoveAction(player, Direction.UP), 1);
+        KeyboardHandler.ActionGroup keyboardGroup = keyboard.createGroup();
+        keyboardGroup.bind(new MoveAction(player, Direction.UP), 1);
         List<ControlStrategy> controllers = new ArrayList<>();
         controllers.add(keyboard);
         controllers.add(new RandomController(firstAi, new Random(42), 0.4f));
@@ -77,7 +78,8 @@ class MainCycleTest {
     void handlesInputBeforeUpdatingFieldAndDrawing() {
         List<String> calls = new ArrayList<>();
         KeyboardHandler keyboardHandler = new KeyboardHandler(key -> true);
-        keyboardHandler.bind(() -> calls.add("input"), 1);
+        KeyboardHandler.ActionGroup keyboardHandlerGroup = keyboardHandler.createGroup();
+        keyboardHandlerGroup.bind(() -> calls.add("input"), 1);
         GameField field = new GameField(3, 3) {
             @Override
             public void update(float deltaTime) {
@@ -115,7 +117,8 @@ class MainCycleTest {
         field.spawn(tank);
         field.spawn(new Tree(new GridPoint2(2, 0)));
         KeyboardHandler handler = new KeyboardHandler(key -> key == 1);
-        handler.bind(new MoveAction(tank, Direction.RIGHT), 1);
+        KeyboardHandler.ActionGroup handlerGroup = handler.createGroup();
+        handlerGroup.bind(new MoveAction(tank, Direction.RIGHT), 1);
         Drawable graphics = new Drawable() {
             @Override
             public void draw(Batch batch) {

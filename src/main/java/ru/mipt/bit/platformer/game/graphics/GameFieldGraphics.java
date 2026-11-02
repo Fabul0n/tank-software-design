@@ -1,7 +1,10 @@
 package ru.mipt.bit.platformer.game.graphics;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.function.Function;
+import ru.mipt.bit.platformer.game.FieldListener;
+import ru.mipt.bit.platformer.game.Obstacle;
 import java.util.Objects;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.maps.tiled.TiledMap;
@@ -9,12 +12,17 @@ import com.badlogic.gdx.maps.tiled.TiledMapTileLayer;
 import com.badlogic.gdx.maps.tiled.renderers.OrthogonalTiledMapRenderer;
 import ru.mipt.bit.platformer.game.GameField;
 
-public class GameFieldGraphics implements Drawable {
+public class GameFieldGraphics implements Drawable, FieldListener {
     private final TiledMap map;
     private final OrthogonalTiledMapRenderer mapRenderer;
-    private final List<Drawable> drawables = new ArrayList<>();
+    private final Map<Obstacle, Drawable> drawables = new LinkedHashMap<>();
+    private final GameField field;
+    private final Function<Obstacle, Drawable> drawableFactory;
 
-    public GameFieldGraphics(GameField gameField, TiledMap map, Batch batch) {
+    public GameFieldGraphics(GameField gameField, TiledMap map, Batch batch,
+            Function<Obstacle, Drawable> drawableFactory) {
+        this.field = Objects.requireNonNull(gameField);
+        this.drawableFactory = Objects.requireNonNull(drawableFactory);
         this.map = Objects.requireNonNull(map);
         TiledMapTileLayer tileLayer = GdxGameUtils.getSingleLayer(map);
         if (!gameField.matchesDimensions(tileLayer.getWidth(), tileLayer.getHeight())) {
@@ -23,10 +31,22 @@ public class GameFieldGraphics implements Drawable {
         mapRenderer = new OrthogonalTiledMapRenderer(map, batch);
         mapRenderer.getViewBounds().set(0, 0,
                 tileLayer.getWidth() * tileLayer.getTileWidth(), tileLayer.getHeight() * tileLayer.getTileHeight());
+        field.subscribe(this);
     }
 
-    public void add(Drawable drawable) {
-        drawables.add(Objects.requireNonNull(drawable));
+    @Override
+    public void added(Obstacle object) {
+        if (!drawables.containsKey(object)) {
+            drawables.put(object, Objects.requireNonNull(drawableFactory.apply(object)));
+        }
+    }
+
+    @Override
+    public void removed(Obstacle object) {
+        Drawable drawable = drawables.remove(object);
+        if (drawable != null) {
+            drawable.dispose();
+        }
     }
 
     @Override
@@ -36,7 +56,7 @@ public class GameFieldGraphics implements Drawable {
         mapRenderer.render();
         batch.begin();
         try {
-            for (Drawable drawable : drawables) {
+            for (Drawable drawable : drawables.values()) {
                 drawable.draw(batch);
             }
         } finally {
@@ -46,7 +66,8 @@ public class GameFieldGraphics implements Drawable {
 
     @Override
     public void dispose() {
-        for (Drawable drawable : drawables) {
+        field.unsubscribe(this);
+        for (Drawable drawable : drawables.values()) {
             drawable.dispose();
         }
         drawables.clear();

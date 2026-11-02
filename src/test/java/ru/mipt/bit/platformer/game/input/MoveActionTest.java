@@ -1,6 +1,5 @@
 package ru.mipt.bit.platformer.game.input;
 
-import com.badlogic.gdx.math.GridPoint2;
 import org.junit.jupiter.api.Test;
 import ru.mipt.bit.platformer.game.Direction;
 import ru.mipt.bit.platformer.game.Movable;
@@ -45,13 +44,6 @@ class MoveActionTest {
             return false;
         }
 
-        @Override
-        public void update(float deltaTime) {
-        }
 
-        @Override
-        public boolean occupies(GridPoint2 tile) {
-            return false;
-        }
     }
 }

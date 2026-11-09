@@ -8,6 +8,11 @@ import ru.mipt.bit.platformer.game.control.ControlStrategy;
 import ru.mipt.bit.platformer.game.control.RandomController;
 import ru.mipt.bit.platformer.level.RandomTankSpawner;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Pixmap;
+import ru.mipt.bit.platformer.game.graphics.HealthBarDisplay;
+import ru.mipt.bit.platformer.game.graphics.HealthBarDrawable;
+import ru.mipt.bit.platformer.game.graphics.Drawable;
+import ru.mipt.bit.platformer.game.input.ToggleHealthBarsAction;
 import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.utils.Array;
@@ -42,6 +47,8 @@ public final class GameConstruction {
         GameField field = new GameField(level.widthInTiles(), level.heightInTiles());
         CommandQueue commands = new CommandQueue();
         KeyboardHandler keyboardHandler = new KeyboardHandler(new GdxKeyboard(), commands);
+        HealthBarDisplay healthBars = new HealthBarDisplay();
+        keyboardHandler.bindOnPress(new ToggleHealthBarsAction(healthBars), Keys.L);
         KeyboardHandler.ActionGroup movement = keyboardHandler.createGroup(KeyboardHandler.Priority.LAST_PRESSED);
         List<ControlStrategy> controllers = new ArrayList<>();
         controllers.add(keyboardHandler);
@@ -81,11 +88,16 @@ public final class GameConstruction {
         Array<Disposable> mapResources = new Array<>();
         mapResources.add(firstGrass);
         mapResources.add(secondGrass);
+        Texture healthBarTexture = createHealthBarTexture();
+        mapResources.add(healthBarTexture);
+        TextureRegion healthBarFill = new TextureRegion(healthBarTexture);
         map.setOwnedResources(mapResources);
         TiledMapTileLayer layer = GdxGameUtils.getSingleLayer(map);
         GameFieldGraphics graphics = new GameFieldGraphics(field, map, batch, object -> {
             if (object instanceof Tank) {
-                return new TankDrawable((Tank) object, new Texture("images/tank_blue.png"), layer, Interpolation.smooth);
+                Tank tank = (Tank) object;
+                Drawable tankDrawable = new TankDrawable(tank, new Texture("images/tank_blue.png"), layer, Interpolation.smooth);
+                return new HealthBarDrawable(tankDrawable, tank, healthBars, healthBarFill, tileSize);
             }
             if (object instanceof Tree) {
                 return new TreeDrawable((Tree) object, new Texture("images/greenTree.png"), layer, Interpolation.smooth);
@@ -98,4 +110,15 @@ public final class GameConstruction {
 
         return new MainCycle(controllers, commands, field, graphics);
     }
+    private static Texture createHealthBarTexture() {
+        Pixmap pixel = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        try {
+            pixel.setColor(1f, 1f, 1f, 1f);
+            pixel.fill();
+            return new Texture(pixel);
+        } finally {
+            pixel.dispose();
+        }
+    }
+
 }

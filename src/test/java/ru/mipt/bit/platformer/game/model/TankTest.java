@@ -13,6 +13,24 @@ import com.badlogic.gdx.math.GridPoint2;
 
 class TankTest {
     @Test
+    void reportsHealthFractionRelativeToInitialHealth() {
+        Tank tank = new Tank(new GridPoint2(), detecting(tile -> false), 0.4f,
+                80, 50, 0.2f, 1f);
+        assertEquals(1f, tank.healthFraction());
+        tank.hit(20);
+        assertEquals(0.75f, tank.healthFraction());
+        tank.hit(100);
+        assertEquals(0f, tank.healthFraction());
+    }
+
+    @Test
+    void defaultTankStartsWithOneHundredHealth() {
+        Tank tank = new Tank(new GridPoint2(), detecting(tile -> false), 0.4f);
+        tank.hit(25);
+        assertEquals(0.75f, tank.healthFraction());
+    }
+
+    @Test
     void checksMovementWithoutTurningMovingOrReservingCells() {
         Tank tank = new Tank(new GridPoint2(1, 1), detecting(tile -> tile.equals(new GridPoint2(2, 1))), 0.4f);
         assertTrue(tank.canMove(Direction.UP));

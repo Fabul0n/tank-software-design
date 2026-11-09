@@ -13,6 +13,7 @@ public class KeyboardHandler implements ControlStrategy {
     private final Keyboard keyboard;
     private final Consumer<Action> commands;
     private final List<ActionGroup> groups = new ArrayList<>();
+    private final List<PressBinding> pressBindings = new ArrayList<>();
 
     public KeyboardHandler(Keyboard keyboard) {
         this(keyboard, Action::execute);
@@ -37,8 +38,15 @@ public class KeyboardHandler implements ControlStrategy {
         return group;
     }
 
+    public void bindOnPress(Action action, int keyCode) {
+        pressBindings.add(new PressBinding(action, keyCode));
+    }
+
     @Override
     public void handle(float deltaTime) {
+        for (PressBinding binding : pressBindings) {
+            binding.handle(keyboard, commands);
+        }
         for (ActionGroup group : groups) {
             group.handle(keyboard, commands);
         }
@@ -90,6 +98,25 @@ public class KeyboardHandler implements ControlStrategy {
             if (selected != null) {
                 commands.accept(selected.action);
             }
+        }
+    }
+
+    private static final class PressBinding {
+        private final Action action;
+        private final int keyCode;
+        private boolean wasPressed;
+
+        private PressBinding(Action action, int keyCode) {
+            this.action = Objects.requireNonNull(action);
+            this.keyCode = keyCode;
+        }
+
+        private void handle(Keyboard keyboard, Consumer<Action> commands) {
+            boolean pressed = keyboard.isKeyPressed(keyCode);
+            if (pressed && !wasPressed) {
+                commands.accept(action);
+            }
+            wasPressed = pressed;
         }
     }
 

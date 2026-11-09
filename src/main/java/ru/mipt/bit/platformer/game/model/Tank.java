@@ -19,6 +19,7 @@ public class Tank implements GameObject, Obstacle, Movable, Shooter, Damageable 
 
     private final GameWorld world;
     private int health;
+    private final int maxHealth;
     private final int bulletDamage;
     private final float bulletSecondsPerTile;
     private final float reloadSeconds;
@@ -38,6 +39,7 @@ public class Tank implements GameObject, Obstacle, Movable, Shooter, Damageable 
             throw new IllegalArgumentException("Invalid tank or weapon settings");
         }
         this.health = health;
+        this.maxHealth = health;
         this.bulletDamage = bulletDamage;
         this.bulletSecondsPerTile = bulletSecondsPerTile;
         this.reloadSeconds = reloadSeconds;
@@ -130,6 +132,10 @@ public class Tank implements GameObject, Obstacle, Movable, Shooter, Damageable 
         if (health <= 0) {
             world.remove(this);
         }
+    }
+
+    public float healthFraction() {
+        return Math.max(0, health) / (float) maxHealth;
     }
 
     public EntityMovement movementSnapshot() {
